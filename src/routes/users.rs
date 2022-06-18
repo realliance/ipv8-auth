@@ -1,13 +1,13 @@
 use std::convert::Infallible;
-use argon2::{PasswordHash, Argon2, PasswordVerifier};
+
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
-use hyper::{Request, Response, Body, StatusCode};
+use hyper::{Body, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::models::{create_user, User, Session};
-
 use super::DB;
+use crate::models::{create_user, Session, User};
 
 #[derive(Deserialize)]
 pub struct UserBody {
@@ -55,8 +55,8 @@ pub struct LoginResponse {
 }
 
 pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-  use crate::schema::users::dsl::*;
   use crate::schema::sessions::dsl::*;
+  use crate::schema::users::dsl::*;
 
   let body = hyper::body::to_bytes(req.into_body()).await.unwrap();
   let login_body = serde_json::from_slice(&body);
@@ -93,15 +93,23 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
       last_used: chrono::Utc::now().naive_utc(),
     };
 
-    match diesel::insert_into(sessions).values(&session).get_result::<Session>(&*db) {
+    match diesel::insert_into(sessions)
+      .values(&session)
+      .get_result::<Session>(&*db)
+    {
       Ok(session) => {
-        Ok(Response::builder()
-          .status(StatusCode::OK)
-          .header("Content-Type", "application/json")
-          .body(Body::from(serde_json::to_string(&LoginResponse {
-            token: session.token.to_string(),
-          }).unwrap()))
-          .unwrap())
+        Ok(
+          Response::builder()
+            .status(StatusCode::OK)
+            .header("Content-Type", "application/json")
+            .body(Body::from(
+              serde_json::to_string(&LoginResponse {
+                token: session.token.to_string(),
+              })
+              .unwrap(),
+            ))
+            .unwrap(),
+        )
       },
       Err(err) => Ok(
         Response::builder()

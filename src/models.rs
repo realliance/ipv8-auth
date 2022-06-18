@@ -6,7 +6,7 @@ use diesel::{Insertable, PgConnection, RunQueryDsl};
 use rand_core::OsRng;
 use uuid::Uuid;
 
-use super::schema::{users, sessions};
+use super::schema::{sessions, users};
 
 #[derive(Identifiable, Queryable)]
 #[table_name = "users"]
