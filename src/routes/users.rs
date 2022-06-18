@@ -1,27 +1,13 @@
 use std::convert::Infallible;
-use std::env;
+use argon2::{PasswordHash, Argon2, PasswordVerifier};
+use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use hyper::{Request, Response, Body, StatusCode};
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-use argon2::{Argon2, PasswordHash, PasswordVerifier};
-use diesel::{Connection, ExpressionMethods, PgConnection, QueryDsl, RunQueryDsl};
-use dotenv::dotenv;
-use hyper::{Body, Method, Request, Response, StatusCode};
-use lazy_static::lazy_static;
-use serde::Deserialize;
-use tokio::sync::Mutex;
-use tracing::info;
+use crate::models::{create_user, User, Session};
 
-use crate::models::{create_user, User};
-
-lazy_static! {
-  static ref DB: Mutex<PgConnection> = Mutex::new(establish_connection());
-}
-
-fn establish_connection() -> PgConnection {
-  dotenv().ok();
-
-  let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-  PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
-}
+use super::DB;
 
 #[derive(Deserialize)]
 pub struct UserBody {
@@ -30,7 +16,7 @@ pub struct UserBody {
   pub password: String,
 }
 
-async fn register_user(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+pub async fn register_user(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   let body = hyper::body::to_bytes(req.into_body()).await.unwrap();
   let user_body = serde_json::from_slice(&body);
   if let Err(err) = user_body {
@@ -63,8 +49,14 @@ pub struct LoginBody {
   password: String,
 }
 
-async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+#[derive(Serialize)]
+pub struct LoginResponse {
+  token: String,
+}
+
+pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   use crate::schema::users::dsl::*;
+  use crate::schema::sessions::dsl::*;
 
   let body = hyper::body::to_bytes(req.into_body()).await.unwrap();
   let login_body = serde_json::from_slice(&body);
@@ -95,7 +87,29 @@ async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
     .verify_password(login_body.password.as_bytes(), &parsed_hash)
     .is_ok()
   {
-    return Ok(Response::builder().status(StatusCode::OK).body(Body::empty()).unwrap());
+    let session = Session {
+      token: Uuid::new_v4(),
+      user_id: user.id,
+      last_used: chrono::Utc::now().naive_utc(),
+    };
+
+    match diesel::insert_into(sessions).values(&session).get_result::<Session>(&*db) {
+      Ok(session) => {
+        Ok(Response::builder()
+          .status(StatusCode::OK)
+          .header("Content-Type", "application/json")
+          .body(Body::from(serde_json::to_string(&LoginResponse {
+            token: session.token.to_string(),
+          }).unwrap()))
+          .unwrap())
+      },
+      Err(err) => Ok(
+        Response::builder()
+          .status(StatusCode::BAD_REQUEST)
+          .body(Body::from(err.to_string()))
+          .unwrap(),
+      ),
+    }
   } else {
     return Ok(
       Response::builder()
@@ -103,16 +117,5 @@ async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
         .body(Body::from("Invalid password"))
         .unwrap(),
     );
-  }
-}
-
-pub async fn handle_requests(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-  let (method, uri) = (req.method(), req.uri().path());
-  info!("Request: {:?}", (method, uri));
-
-  match (method, uri) {
-    (&Method::POST, "/register") => register_user(req).await,
-    (&Method::POST, "/login") => login(req).await,
-    _ => Ok(Response::builder().status(404).body(Body::from("Not found")).unwrap()),
   }
 }

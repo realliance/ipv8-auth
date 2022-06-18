@@ -1,12 +1,15 @@
 use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
+use chrono::NaiveDateTime;
 use diesel::result::Error;
-use diesel::{Insertable, PgConnection, Queryable, RunQueryDsl};
+use diesel::{Insertable, PgConnection, RunQueryDsl};
 use rand_core::OsRng;
+use uuid::Uuid;
 
-use super::schema::users;
+use super::schema::{users, sessions};
 
-#[derive(Queryable)]
+#[derive(Identifiable, Queryable)]
+#[table_name = "users"]
 pub struct User {
   pub id: i32,
   pub name: String,
@@ -33,4 +36,13 @@ pub fn create_user<'a>(conn: &PgConnection, name: &'a str, email: &'a str, passw
   };
 
   diesel::insert_into(users::table).values(&new_user).get_result(conn)
+}
+
+#[derive(Associations, Insertable, Queryable)]
+#[belongs_to(User)]
+#[table_name = "sessions"]
+pub struct Session {
+  pub token: Uuid,
+  pub user_id: i32,
+  pub last_used: NaiveDateTime,
 }
