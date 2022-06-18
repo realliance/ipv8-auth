@@ -1,0 +1,20 @@
+[package]
+name = "ipv8-auth"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+diesel = { version = "1.4", features = ["postgres"] }
+dotenv = "0.15"
+hyper = { version = "0.14", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+lazy_static = "1.4"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+argon2 = "0.4"
+rand_core = { version = "0.6", features = ["std"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
