@@ -1,20 +1,23 @@
 table! {
     sessions (token) {
         token -> Uuid,
-        user_id -> Int4,
+        user_id -> Uuid,
         last_used -> Timestamp,
     }
 }
 
 table! {
     users (id) {
-        id -> Int4,
+        id -> Uuid,
         name -> Varchar,
-        email -> Varchar,
+        username -> Varchar,
         password_digest -> Varchar,
     }
 }
 
 joinable!(sessions -> users (user_id));
 
-allow_tables_to_appear_in_same_query!(sessions, users,);
+allow_tables_to_appear_in_same_query!(
+    sessions,
+    users,
+);

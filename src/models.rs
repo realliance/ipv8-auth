@@ -8,31 +8,24 @@ use uuid::Uuid;
 
 use super::schema::{sessions, users};
 
-#[derive(Identifiable, Queryable)]
+#[derive(Identifiable, Insertable, Queryable)]
 #[table_name = "users"]
 pub struct User {
-  pub id: i32,
+  pub id: Uuid,
   pub name: String,
-  pub email: String,
+  pub username: String,
   pub password_digest: String,
 }
 
-#[derive(Insertable)]
-#[table_name = "users"]
-pub struct NewUser<'a> {
-  pub name: &'a str,
-  pub email: &'a str,
-  pub password_digest: &'a str,
-}
-
-pub fn create_user<'a>(conn: &PgConnection, name: &'a str, email: &'a str, password: &'a str) -> Result<User, Error> {
+pub fn create_user<'a>(conn: &PgConnection, name: String, username: String, password: String) -> Result<User, Error> {
   let salt = SaltString::generate(&mut OsRng);
   let argon2 = Argon2::default();
   let password_digest = argon2.hash_password(password.as_bytes(), &salt).unwrap();
-  let new_user = NewUser {
+  let new_user = User {
+    id: Uuid::new_v4(),
     name,
-    email,
-    password_digest: &password_digest.to_string(),
+    username,
+    password_digest: password_digest.to_string(),
   };
 
   diesel::insert_into(users::table).values(&new_user).get_result(conn)
@@ -43,6 +36,6 @@ pub fn create_user<'a>(conn: &PgConnection, name: &'a str, email: &'a str, passw
 #[table_name = "sessions"]
 pub struct Session {
   pub token: Uuid,
-  pub user_id: i32,
+  pub user_id: Uuid,
   pub last_used: NaiveDateTime,
 }
