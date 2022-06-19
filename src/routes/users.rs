@@ -8,7 +8,7 @@ use tracing::error;
 use uuid::Uuid;
 
 use super::DB;
-use crate::models::{create_user, Session, User};
+use crate::models::{create_user, update_session_last_used, Session, User};
 
 #[derive(Deserialize)]
 pub struct UserBody {
@@ -121,11 +121,11 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
 
   let db = DB.lock().await;
   let result = users.filter(username.eq(&login_body.username)).first(&*db);
-  if let Err(err) = result {
+  if let Err(_) = result {
     return Ok(
       Response::builder()
         .status(StatusCode::BAD_REQUEST)
-        .body(Body::from(err.to_string()))
+        .body(Body::from("Invalid login credentials"))
         .unwrap(),
     );
   }
@@ -160,19 +160,96 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
             .unwrap(),
         )
       },
-      Err(err) => Ok(
-        Response::builder()
-          .status(StatusCode::BAD_REQUEST)
-          .body(Body::from(err.to_string()))
-          .unwrap(),
-      ),
+      Err(err) => {
+        error!("{}", err.to_string());
+        Ok(
+          Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(Body::empty())
+            .unwrap(),
+        )
+      },
     }
   } else {
     return Ok(
       Response::builder()
         .status(StatusCode::BAD_REQUEST)
-        .body(Body::from("Invalid password"))
+        .body(Body::from("Invalid login credentials"))
         .unwrap(),
     );
   }
+}
+
+#[derive(Serialize)]
+pub struct UserResult {
+  token: String,
+  name: String,
+  username: String,
+}
+
+pub async fn get_user_by_token(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+  use crate::schema::sessions::dsl::*;
+  use crate::schema::users::dsl::*;
+
+  let db = DB.lock().await;
+  if req.headers().get("Authorization").is_none() {
+    return Ok(
+      Response::builder()
+        .status(StatusCode::UNAUTHORIZED)
+        .body(Body::from("No authorization header"))
+        .unwrap(),
+    );
+  }
+  let user_token = Uuid::parse_str(req.headers().get("Authorization").unwrap().to_str().unwrap());
+  if user_token.is_err() {
+    return Ok(
+      Response::builder()
+        .status(StatusCode::UNAUTHORIZED)
+        .body(Body::from("Invalid authorization header"))
+        .unwrap(),
+    );
+  }
+  let user_token = user_token.unwrap();
+
+  let result = sessions.filter(token.eq(user_token)).first(&*db);
+  if let Err(_) = result {
+    return Ok(
+      Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from("Invalid token"))
+        .unwrap(),
+    );
+  }
+
+  let session: Session = result.unwrap();
+  update_session_last_used(&db, session.token);
+
+  let result = users.filter(id.eq(session.user_id)).first(&*db);
+  if result.is_err() {
+    return Ok(
+      Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from("Invalid token"))
+        .unwrap(),
+    );
+  }
+
+  let user: User = result.unwrap();
+
+  return Ok(
+    Response::builder()
+      .status(StatusCode::OK)
+      .header("Content-Type", "application/json")
+      .body(
+        Body::from(
+          serde_json::to_string(&UserResult {
+            token: session.token.to_string(),
+            name: user.name,
+            username: user.username,
+          })
+          .unwrap(),
+        ),
+      )
+      .unwrap(),
+  );
 }

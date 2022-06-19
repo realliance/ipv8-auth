@@ -29,6 +29,7 @@ pub async fn handle_requests(req: Request<Body>) -> Result<Response<Body>, Infal
   match (method, uri) {
     (&Method::POST, "/register") => users::register_user(req).await,
     (&Method::POST, "/login") => users::login(req).await,
+    (&Method::GET, "/user") => users::get_user_by_token(req).await,
     _ => Ok(Response::builder().status(404).body(Body::from("Not found")).unwrap()),
   }
 }

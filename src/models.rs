@@ -2,7 +2,7 @@ use argon2::password_hash::SaltString;
 use argon2::{Argon2, PasswordHasher};
 use chrono::NaiveDateTime;
 use diesel::result::Error;
-use diesel::{Insertable, PgConnection, RunQueryDsl};
+use diesel::{ExpressionMethods, Insertable, PgConnection, QueryDsl, RunQueryDsl};
 use rand_core::OsRng;
 use uuid::Uuid;
 
@@ -38,4 +38,11 @@ pub struct Session {
   pub token: Uuid,
   pub user_id: Uuid,
   pub last_used: NaiveDateTime,
+}
+
+pub fn update_session_last_used(conn: &PgConnection, token: Uuid) -> Result<(), Error> {
+  diesel::update(sessions::table.filter(sessions::token.eq(token)))
+    .set(sessions::last_used.eq(chrono::Utc::now().naive_utc()))
+    .get_result::<Session>(conn)
+    .map(|_| ())
 }
