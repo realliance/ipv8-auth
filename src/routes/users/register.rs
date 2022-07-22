@@ -52,20 +52,23 @@ impl UserBody {
 }
 
 pub async fn register_user(req: Request<Body>) -> Result<Response<Body>, Infallible> {
+  // Parse Body
   let body = hyper::body::to_bytes(req.into_body()).await.unwrap();
   let user_body = serde_json::from_slice(&body);
-
-  // Bad Request if the body is not valid JSON
   if let Err(err) = user_body {
     return respond!(StatusCode::BAD_REQUEST, err.to_string());
   }
   let user_body: UserBody = user_body.unwrap();
 
+  // Determine if user is valid
   let db = DB.lock().await;
   if let Err(errors) = user_body.is_valid() {
     return respond!(StatusCode::BAD_REQUEST, serde_json::to_string(&errors).unwrap());
   }
 
+  // TODO Check if user already exists.
+
+  // Create new user
   let user = create_user(&db, user_body.name, user_body.username, user_body.password, 0);
   if let Err(err) = user {
     error!("{}", err.to_string());

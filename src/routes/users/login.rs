@@ -30,6 +30,7 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   use crate::schema::sessions::dsl::*;
   use crate::schema::users::dsl::*;
 
+  // Parse Login Body
   let body = hyper::body::to_bytes(req.into_body()).await.unwrap();
   let login_body = serde_json::from_slice(&body);
   if let Err(err) = login_body {
@@ -37,18 +38,21 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   }
   let login_body: LoginBody = login_body.unwrap();
 
+  // Find user if exists
   let db = DB.lock().await;
   let result = users.filter(username.eq(&login_body.username)).first(&*db);
   if let Err(_) = result {
     return respond!(StatusCode::BAD_REQUEST, "Invalid login credentials");
   }
 
+  // Check password
   let user: User = result.unwrap();
   let parsed_hash = PasswordHash::new(&user.password_digest).unwrap();
   if Argon2::default()
     .verify_password(login_body.password.as_bytes(), &parsed_hash)
     .is_ok()
   {
+    // Create session if password was correct
     let session = Session {
       token: Uuid::new_v4(),
       user_id: user.id,
@@ -60,6 +64,7 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
       .get_result::<Session>(&*db)
     {
       Ok(session) => {
+        // Return login message
         let incoming_message = if !user.is_licensed() {
           Some(GAME_STRINGS.puzzle_message())
         } else {
