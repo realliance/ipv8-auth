@@ -10,6 +10,7 @@ use uuid::Uuid;
 use crate::diesel::{ExpressionMethods, RunQueryDsl};
 use crate::game::GAME_STRINGS;
 use crate::models::{Session, User};
+use crate::respond;
 use crate::routes::DB;
 
 #[derive(Deserialize)]
@@ -32,24 +33,14 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   let body = hyper::body::to_bytes(req.into_body()).await.unwrap();
   let login_body = serde_json::from_slice(&body);
   if let Err(err) = login_body {
-    return Ok(
-      Response::builder()
-        .status(StatusCode::BAD_REQUEST)
-        .body(Body::from(err.to_string()))
-        .unwrap(),
-    );
+    return respond!(StatusCode::BAD_REQUEST, err.to_string());
   }
   let login_body: LoginBody = login_body.unwrap();
 
   let db = DB.lock().await;
   let result = users.filter(username.eq(&login_body.username)).first(&*db);
   if let Err(_) = result {
-    return Ok(
-      Response::builder()
-        .status(StatusCode::BAD_REQUEST)
-        .body(Body::from("Invalid login credentials"))
-        .unwrap(),
-    );
+    return respond!(StatusCode::BAD_REQUEST, "Invalid login credentials");
   }
 
   let user: User = result.unwrap();
@@ -94,20 +85,10 @@ pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
       },
       Err(err) => {
         error!("{}", err.to_string());
-        Ok(
-          Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(Body::empty())
-            .unwrap(),
-        )
+        respond!(StatusCode::INTERNAL_SERVER_ERROR, "")
       },
     }
   } else {
-    return Ok(
-      Response::builder()
-        .status(StatusCode::BAD_REQUEST)
-        .body(Body::from("Invalid login credentials"))
-        .unwrap(),
-    );
+    return respond!(StatusCode::BAD_REQUEST, "Invalid login credentials");
   }
 }

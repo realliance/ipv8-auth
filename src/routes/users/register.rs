@@ -5,6 +5,7 @@ use serde::Deserialize;
 use tracing::error;
 
 use crate::models::create_user;
+use crate::respond;
 use crate::routes::DB;
 
 #[derive(Deserialize)]
@@ -56,35 +57,20 @@ pub async fn register_user(req: Request<Body>) -> Result<Response<Body>, Infalli
 
   // Bad Request if the body is not valid JSON
   if let Err(err) = user_body {
-    return Ok(
-      Response::builder()
-        .status(StatusCode::BAD_REQUEST)
-        .body(Body::from(err.to_string()))
-        .unwrap(),
-    );
+    return respond!(StatusCode::BAD_REQUEST, err.to_string());
   }
   let user_body: UserBody = user_body.unwrap();
 
   let db = DB.lock().await;
   if let Err(errors) = user_body.is_valid() {
-    return Ok(
-      Response::builder()
-        .status(StatusCode::BAD_REQUEST)
-        .body(Body::from(serde_json::to_string(&errors).unwrap()))
-        .unwrap(),
-    );
+    return respond!(StatusCode::BAD_REQUEST, serde_json::to_string(&errors).unwrap());
   }
 
   let user = create_user(&db, user_body.name, user_body.username, user_body.password, 0);
   if let Err(err) = user {
     error!("{}", err.to_string());
-    return Ok(
-      Response::builder()
-        .status(StatusCode::INTERNAL_SERVER_ERROR)
-        .body(Body::empty())
-        .unwrap(),
-    );
+    return respond!(StatusCode::INTERNAL_SERVER_ERROR, "");
   }
 
-  Ok(Response::builder().status(200).body(Body::empty()).unwrap())
+  respond!(StatusCode::OK, "")
 }

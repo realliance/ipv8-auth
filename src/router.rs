@@ -3,9 +3,10 @@ use std::convert::Infallible;
 use std::fmt::Display;
 use std::future::Future;
 use std::pin::Pin;
+use std::time::Instant;
 
 use hyper::{Body, Method, Request, Response};
-use tracing::info;
+use tracing::{debug, info, span, Level};
 
 #[derive(PartialEq)]
 pub struct Route(pub Method, pub Cow<'static, str>);
@@ -59,14 +60,29 @@ pub struct Router {
 impl Router {
   pub async fn route(&self, req: Request<Body>) -> Result<Response<Body>, Infallible> {
     let route = Route(req.method().clone(), Cow::Owned(req.uri().path().to_string()));
-    info!("Request: {}", &route);
+    debug!("Begin Request {}", &route);
+    let start = Instant::now();
 
-    let func = self
-      .routes
-      .iter()
-      .find(|(r, _)| r == &route)
-      .map_or(&self.not_found_route, |(_, func)| func);
-    func(req).await
+    let span = span!(Level::TRACE, "request");
+    let result = {
+      let _guard = span.enter();
+      let func = self
+        .routes
+        .iter()
+        .find(|(r, _)| r == &route)
+        .map_or(&self.not_found_route, |(_, func)| func);
+      func(req).await
+    };
+    let time_to_complete = start.elapsed();
+
+    info!(
+      "Request {}, {} in {:?}",
+      &route,
+      result.as_ref().unwrap().status(),
+      time_to_complete
+    );
+
+    result
   }
 
   pub fn builder() -> RouteBuilder {
