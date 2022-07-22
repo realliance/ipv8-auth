@@ -1,0 +1,22 @@
+
+welcome_begin = """
+On behalf of the Buearu of Intergalatic Trade and Services, welcome to your Operation License interview.
+While you have completed your paperwork with the Buearu, we cannot allow you to begin planetary extracion operations until you have completed an assessment. This test will ensure you can get your bearings quickly once you arrive on the planet's surface, time is money as they say.
+So without further ado, let's begin the assessment:
+"""
+
+puzzle_prompt = """
+The Buearu is requesting you to sort through incoming instructions for two logistical drones, Fizz and Buzz.
+To receive an instruction to process, POST %URL%/next_instruction with an Authorization Header.
+You will receive a token and an identification value.
+If the identification value is divisible by 3, submit the token to Fizz by POSTing %URL%/fizz with an Authorization Header and a JSON object with the key "token" with the token as its value.
+If the identification value is divisible by 5, submit the token to Buzz by POSTing %URL%/buzz with an Authorization Header and a JSON object with the key "token" with the token as its value.
+If the identification value is divisible by 3 and 5, submit the token to both Fizz and Buzz.
+If the identification value is divisible by neither, submit the token back to the instruction system by POSTing %URL%/instructions with an Authorization Header and a JSON object with the key "token" with the token as its value.
+Correctly sort 150 instructions in a row to complete the challenge and receive your operations license.
+"""
+
+welcome_end = """
+Good luck on your assessment and we look forward to working with you further.
+If you ever need to review this introduction statement again, you can GET our instructions at %URL%/instructions with an Authorization Header.
+You will also receive the message anytime you login and have not passed your Operations License exam."""

@@ -3,15 +3,25 @@ use std::env;
 
 use diesel::{Connection, PgConnection};
 use dotenv::dotenv;
-use hyper::{Body, Method, Request, Response};
+use futures::FutureExt;
+use hyper::{Body, Request, Response};
 use lazy_static::lazy_static;
 use tokio::sync::Mutex;
-use tracing::info;
+
+use crate::router::Router;
+use crate::routes::users::UserRouter;
 
 mod users;
 
+pub async fn not_found_route(_: Request<Body>) -> Result<Response<Body>, Infallible> {
+  Ok(Response::builder().status(404).body(Body::from("Not found")).unwrap())
+}
+
 lazy_static! {
   pub static ref DB: Mutex<PgConnection> = Mutex::new(establish_connection());
+  pub static ref ROUTER: Router = Router::builder()
+    .add_routes(&UserRouter)
+    .not_found_route(|req| not_found_route(req).boxed());
 }
 
 fn establish_connection() -> PgConnection {
@@ -22,14 +32,5 @@ fn establish_connection() -> PgConnection {
 }
 
 pub async fn handle_requests(req: Request<Body>) -> Result<Response<Body>, Infallible> {
-  let (method, uri) = (req.method(), req.uri().path());
-
-  info!("Request: {:?}", (method, uri));
-
-  match (method, uri) {
-    (&Method::POST, "/register") => users::register_user(req).await,
-    (&Method::POST, "/login") => users::login(req).await,
-    (&Method::GET, "/user") => users::get_user_by_token(req).await,
-    _ => Ok(Response::builder().status(404).body(Body::from("Not found")).unwrap()),
-  }
+  ROUTER.route(req).await
 }
