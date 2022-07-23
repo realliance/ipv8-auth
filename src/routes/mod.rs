@@ -2,7 +2,6 @@ use std::convert::Infallible;
 use std::env;
 
 use diesel::{Connection, PgConnection};
-use dotenv::dotenv;
 use futures::FutureExt;
 use hyper::{Body, Request, Response, StatusCode};
 use lazy_static::lazy_static;
@@ -33,11 +32,16 @@ lazy_static! {
 }
 
 fn establish_connection() -> PgConnection {
-  debug!("Connecting to Postgresql...");
-  dotenv().ok();
-
   let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-  PgConnection::establish(&database_url).expect(&format!("Error connecting to {}", database_url))
+  debug!("Connecting to Postgresql...");
+  let conn = PgConnection::establish(&database_url);
+  match conn {
+    Ok(conn) => {
+      debug!("Connected to DB");
+      conn
+    },
+    Err(err) => panic!("{}", err),
+  }
 }
 
 pub async fn handle_requests(req: Request<Body>) -> Result<Response<Body>, Infallible> {

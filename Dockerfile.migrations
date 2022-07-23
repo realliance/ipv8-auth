@@ -1,0 +1,19 @@
+FROM docker.io/rust:1.62-alpine as BUILDER
+
+WORKDIR /app
+
+RUN apk add musl-dev libc-dev postgresql-dev
+
+RUN cargo install diesel_cli --no-default-features --features "postgres"
+
+FROM gcr.io/distroless/cc
+
+WORKDIR /app
+
+ADD ./migrations/ /app/migrations/
+
+ADD Cargo.toml .
+
+COPY --from=BUILDER /usr/local/cargo/bin/diesel .
+
+CMD ["/app/diesel", "migration", "run"]

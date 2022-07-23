@@ -3,9 +3,8 @@ use argon2::{Argon2, PasswordHasher};
 use chrono::NaiveDateTime;
 use diesel::result::Error;
 use diesel::{ExpressionMethods, Insertable, PgConnection, QueryDsl, RunQueryDsl};
-use crate::diesel::associations::HasTable;
 use rand_core::OsRng;
-use tracing::{debug, warn};
+use tracing::debug;
 use uuid::Uuid;
 
 use super::schema::*;
