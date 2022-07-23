@@ -5,10 +5,11 @@ use std::future::Future;
 use std::pin::Pin;
 use std::time::Instant;
 
+use hashbrown::HashMap;
 use hyper::{Body, Method, Request, Response};
 use tracing::{debug, info, span, Level};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq, Hash)]
 pub struct Route(pub Method, pub Cow<'static, str>);
 
 impl From<(Method, Cow<'static, str>)> for Route {
@@ -46,14 +47,14 @@ impl RouteBuilder {
 
   pub fn not_found_route(self, route: RouteFuture) -> Router {
     Router {
-      routes: self.routes,
+      routes: self.routes.into_iter().collect(),
       not_found_route: route,
     }
   }
 }
 
 pub struct Router {
-  routes: Vec<RoutedFunction>,
+  routes: HashMap<Route, RouteFuture>,
   not_found_route: RouteFuture,
 }
 
@@ -68,9 +69,8 @@ impl Router {
       let _guard = span.enter();
       let func = self
         .routes
-        .iter()
-        .find(|(r, _)| r == &route)
-        .map_or(&self.not_found_route, |(_, func)| func);
+        .get(&route)
+        .unwrap_or(&self.not_found_route);
       func(req).await
     };
     let time_to_complete = start.elapsed();

@@ -11,10 +11,14 @@ use tracing::debug;
 
 use crate::respond;
 use crate::router::Router;
+use crate::routes::game::GameRouter;
+use crate::routes::health::HealthRouter;
 use crate::routes::users::UserRouter;
 
+mod game;
 mod users;
 mod util;
+mod health;
 
 lazy_static! {
   pub static ref DB: Mutex<PgConnection> = Mutex::new(establish_connection());
@@ -22,6 +26,8 @@ lazy_static! {
     debug!("Building Router Table...");
     Router::builder()
       .add_routes(&UserRouter)
+      .add_routes(&GameRouter)
+      .add_routes(&HealthRouter)
       .not_found_route(|req| not_found_route(req).boxed())
   };
 }

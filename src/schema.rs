@@ -3,6 +3,9 @@ table! {
         user_id -> Uuid,
         token -> Uuid,
         instruction -> Int4,
+        contacted_fizz -> Bool,
+        contacted_buzz -> Bool,
+        contacted_instructions -> Bool,
     }
 }
 
@@ -27,4 +30,8 @@ table! {
 joinable!(games -> users (user_id));
 joinable!(sessions -> users (user_id));
 
-allow_tables_to_appear_in_same_query!(games, sessions, users,);
+allow_tables_to_appear_in_same_query!(
+    games,
+    sessions,
+    users,
+);
