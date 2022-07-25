@@ -31,9 +31,6 @@ async fn main() {
     .parse()
     .unwrap_or_else(|_| panic!("Failed to parse server address. Found {}", get_server_url()));
 
-  // Ensure DB var is set
-  let _ = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-
   let svc = make_service_fn(|_conn| async { Ok::<_, Infallible>(service_fn(handle_requests)) });
   let server = Server::bind(&addr).serve(svc);
 

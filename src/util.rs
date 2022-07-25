@@ -15,7 +15,7 @@ pub fn get_db_url() -> String {
     "postgres://{}:{}@{}/{}",
     env::var("DATABASE_USER").expect("Could not find the environment variable DATABASE_USER"),
     env::var("DATABASE_PASS").expect("Could not find the environment variable DATABASE_PASS"),
-    env::var("DATABASE_URL").expect("Could not find the environment variable DATABASE_URL"),
+    env::var("DATABASE_URI").expect("Could not find the environment variable DATABASE_URL"),
     env::var("DATABASE_DB").expect("Could not find the environment variable DATABASE_DB"),
   )
 }
