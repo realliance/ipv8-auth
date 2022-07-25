@@ -52,6 +52,8 @@ pub fn get_user_by_auth_header(db: &PgConnection, req: &Request<Body>) -> Result
     );
   }
 
+  // TODO expire session token if it's been too long.
+
   let session: Session = result.unwrap();
   if let Err(err) = update_session_last_used(&db, session.token) {
     warn!("Failed to update session last used token {}", err.to_string());

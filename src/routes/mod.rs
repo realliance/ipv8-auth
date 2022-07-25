@@ -1,5 +1,4 @@
 use std::convert::Infallible;
-use std::env;
 
 use diesel::{Connection, PgConnection};
 use futures::FutureExt;
@@ -13,6 +12,7 @@ use crate::router::Router;
 use crate::routes::game::GameRouter;
 use crate::routes::health::HealthRouter;
 use crate::routes::users::UserRouter;
+use crate::util::get_db_url;
 
 mod game;
 mod users;
@@ -32,7 +32,7 @@ lazy_static! {
 }
 
 fn establish_connection() -> PgConnection {
-  let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+  let database_url = get_db_url();
   debug!("Connecting to Postgresql...");
   let conn = PgConnection::establish(&database_url);
   match conn {
