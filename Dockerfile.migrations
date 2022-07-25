@@ -6,4 +6,4 @@ RUN apk add musl-dev libc-dev postgresql-dev
 
 RUN cargo install diesel_cli --no-default-features --features "postgres"
 
-CMD ["/app/diesel", "migration", "run"]
+CMD ["diesel", "migration", "run"]
