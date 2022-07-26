@@ -1,8 +1,8 @@
-FROM docker.io/rust:1.62-alpine as BUILDER
+FROM docker.io/rust:1.62-slim as BUILDER
 
 WORKDIR /app
 
-RUN apk add musl-dev libc-dev postgresql-dev
+RUN apt-get update && apt-get install -y libpq-dev
 
 RUN cargo install diesel_cli --no-default-features --features "postgres"
 
