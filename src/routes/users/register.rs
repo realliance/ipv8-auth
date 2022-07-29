@@ -43,6 +43,8 @@ impl UserBody {
       errors.push("Password must be at least 12 characters long".to_string());
     }
 
+    // TODO Check if username is taken
+
     if errors.len() > 0 {
       Err(errors)
     } else {

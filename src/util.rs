@@ -9,6 +9,10 @@ pub fn get_server_url() -> String {
   )
 }
 
+pub fn external_url() -> String {
+  env::var("EXTERNAL_URL").unwrap_or(get_server_url())
+}
+
 #[inline(always)]
 pub fn get_db_url() -> String {
   format!(

@@ -20,6 +20,7 @@ mod util;
 mod health;
 
 lazy_static! {
+  // This connection sometimes closes. Consider a pool method.
   pub static ref DB: Mutex<PgConnection> = Mutex::new(establish_connection());
   pub static ref ROUTER: Router = {
     debug!("Building Router Table...");

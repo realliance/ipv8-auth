@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::util::get_server_url;
+use crate::util::{external_url};
 
 #[derive(Serialize, Deserialize)]
 pub struct GameStrings {
@@ -16,5 +16,5 @@ impl GameStrings {
 }
 
 lazy_static::lazy_static! {
-  pub static ref GAME_STRINGS: GameStrings = toml::from_str(&include_str!("../strings.toml").replace("%URL%", &get_server_url())).unwrap();
+  pub static ref GAME_STRINGS: GameStrings = toml::from_str(&include_str!("../strings.toml").replace("%URL%", &external_url())).unwrap();
 }
