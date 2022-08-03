@@ -20,6 +20,9 @@ pub mod routes;
 pub mod schema;
 pub mod util;
 
+#[cfg(test)]
+mod test;
+
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() {
   tracing_subscriber::fmt::init();

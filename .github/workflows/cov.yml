@@ -9,10 +9,8 @@ env:
   RUSTFLAGS: -Cinstrument-coverage
 
 jobs:
-  build:
-
+  gen:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Install required packages
