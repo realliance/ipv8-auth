@@ -29,7 +29,7 @@ jobs:
     - name: Download grcov
       run: curl -L https://github.com/mozilla/grcov/releases/download/v0.8.11/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar xjf -
     - name: Run tests
-      run: LLVM_PROFILE_FILE="temple-%p-%m.profraw" cargo test
+      run: LLVM_PROFILE_FILE="ipv8-auth-%p-%m.profraw" cargo test
     - name: Generate report file
       run: ./grcov . --binary-path ./target/debug/ -s . -t lcov --branch --ignore-not-existing --ignore "/*" -o lcov.info
     - name: Publish to Codecov
