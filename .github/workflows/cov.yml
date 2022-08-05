@@ -8,6 +8,9 @@ env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -Cinstrument-coverage
 
+env:
+  DATABASE_URL: postgres://postgres:postgres@localhost:5433/postgres
+
 jobs:
   gen:
     runs-on: ubuntu-latest
@@ -41,6 +44,10 @@ jobs:
       uses: Swatinem/rust-cache@v1
     - name: Download grcov
       run: curl -L https://github.com/mozilla/grcov/releases/download/v0.8.11/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar xjf -
+    - name: Get Diesel Cli
+      run: cargo install diesel-cli
+    - name: Migrate DB
+      run: diesel migration run
     - name: Run tests
       run: LLVM_PROFILE_FILE="ipv8-auth-%p-%m.profraw" cargo test
     - name: Generate report file
