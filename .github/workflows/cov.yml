@@ -7,8 +7,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -Cinstrument-coverage
-
-env:
   DATABASE_URL: postgres://postgres:postgres@localhost:5433/postgres
 
 jobs:
