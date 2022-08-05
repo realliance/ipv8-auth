@@ -11,6 +11,21 @@ env:
 jobs:
   gen:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: postgres        
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
     - uses: actions/checkout@v2
     - name: Install required packages
@@ -26,8 +41,6 @@ jobs:
       uses: Swatinem/rust-cache@v1
     - name: Download grcov
       run: curl -L https://github.com/mozilla/grcov/releases/download/v0.8.11/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar xjf -
-    - name: Deploy dev db stack
-      run: docker-compose up -d
     - name: Run tests
       run: LLVM_PROFILE_FILE="ipv8-auth-%p-%m.profraw" cargo test
     - name: Generate report file
