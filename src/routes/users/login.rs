@@ -20,10 +20,11 @@ pub struct LoginBody {
 }
 
 #[derive(Serialize)]
+#[cfg_attr(test, derive(Deserialize))]
 pub struct LoginResponse {
-  token: String,
-  licensed: bool,
-  incoming_message: Option<Vec<String>>,
+  pub token: String,
+  pub licensed: bool,
+  pub incoming_message: Option<Vec<String>>,
 }
 
 pub async fn login(req: Request<Body>) -> Result<Response<Body>, Infallible> {
