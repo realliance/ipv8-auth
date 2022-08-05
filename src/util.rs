@@ -15,11 +15,17 @@ pub fn external_url() -> String {
 
 #[inline(always)]
 pub fn get_db_url() -> String {
+  #[cfg(not(test))]
+  let uri = env::var("DATABASE_URI").expect("Could not find the environment variable DATABASE_URL");
+
+  #[cfg(test)]
+  let uri = env::var("TEST_DATABASE_URI").expect("Could not find the environment variable TEST_DATABASE_URI");
+
   format!(
     "postgres://{}:{}@{}/{}",
     env::var("DATABASE_USER").expect("Could not find the environment variable DATABASE_USER"),
     env::var("DATABASE_PASS").expect("Could not find the environment variable DATABASE_PASS"),
-    env::var("DATABASE_URI").expect("Could not find the environment variable DATABASE_URL"),
+    uri,
     env::var("DATABASE_DB").expect("Could not find the environment variable DATABASE_DB"),
   )
 }

@@ -4,11 +4,15 @@ use hyper::{Body, Request, Response, StatusCode};
 use serde::Deserialize;
 use tracing::error;
 
+#[cfg(test)]
+use serde::Serialize;
+
 use crate::models::create_user;
 use crate::respond;
 use crate::routes::DB;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone)]
+#[cfg_attr(test, derive(Serialize))]
 pub struct UserBody {
   pub name: String,
   pub username: String,

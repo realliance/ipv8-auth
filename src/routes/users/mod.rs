@@ -7,9 +7,9 @@ use crate::route_func;
 use crate::router::{Routable, RoutedFunction};
 use crate::routes::users::login::login;
 
-mod login;
-mod register;
-mod user;
+pub mod login;
+pub mod register;
+pub mod user;
 
 pub struct UserRouter;
 

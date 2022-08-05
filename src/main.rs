@@ -2,7 +2,6 @@
 extern crate diesel;
 
 use std::convert::Infallible;
-use std::env;
 use std::net::SocketAddr;
 
 use dotenv::dotenv;
@@ -21,7 +20,7 @@ pub mod schema;
 pub mod util;
 
 #[cfg(test)]
-mod test;
+mod tests;
 
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() {

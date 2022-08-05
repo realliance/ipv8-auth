@@ -14,10 +14,10 @@ use crate::routes::health::HealthRouter;
 use crate::routes::users::UserRouter;
 use crate::util::get_db_url;
 
-mod game;
-mod users;
-mod util;
-mod health;
+pub mod game;
+pub mod users;
+pub mod util;
+pub mod health;
 
 lazy_static! {
   // This connection sometimes closes. Consider a pool method.
