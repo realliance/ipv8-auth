@@ -10,10 +10,10 @@ echo "Ensuring test database is live"
 sudo docker-compose up -d
 
 echo "Running tests with instrument coverage"
-LLVM_PROFILE_FILE="ipv8-auth-%p-%m.profraw" RUSTFLAGS=-Cinstrument-coverage DATABASE_URL=postgres://postgres:postgres@localhost:5433/postgres cargo test
+LLVM_PROFILE_FILE="ipv8-auth-%p-%m.profraw" RUSTFLAGS="-Cinstrument-coverage" DATABASE_URL=postgres://postgres:postgres@localhost:5433/postgres cargo test
 
 echo "Generating Coverage Report"
-grcov . --binary-path ./target/debug/ -s . -t html --branch --ignore-not-existing --ignore "/*" -o cov/
+grcov . --binary-path ./target/debug/ -s . -t html --branch --guess-directory-when-missing --ignore-not-existing --ignore "/*" -o cov/
 
 echo "Cleaning up profraw files"
 rm *.profraw

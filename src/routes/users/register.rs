@@ -19,31 +19,38 @@ pub struct UserBody {
 }
 
 impl UserBody {
+  pub const SHORT_USERNAME_ERR: &'static str = "Username must be at least 3 characters long";
+  pub const SHORT_PASSWORD_ERR: &'static str = "Password must be at least 12 characters long";
+  pub const LONG_USERNAME_ERR: &'static str = "Username must be at most 100 characters long";
+  pub const SHORT_COMPANY_ERR: &'static str = "Company Name must be at least 3 characters long";
+  pub const LONG_COMPANY_ERR: &'static str = "Company Name must be at most 100 characters long";
+  pub const USERNAME_NONALPHABETIC_ERR: &'static str = "Username must be alphabetic";
+
   pub fn is_valid(&self) -> Result<(), Vec<String>> {
     let mut errors = Vec::new();
     if self.username.len() < 3 {
-      errors.push("Username must be at least 3 characters long".to_string());
+      errors.push(Self::SHORT_USERNAME_ERR.to_string());
     }
 
     if self.username.len() > 100 {
-      errors.push("Username must be at most 100 characters long".to_string());
+      errors.push(Self::LONG_USERNAME_ERR.to_string());
     }
 
     if self.name.len() < 3 {
-      errors.push("Company Name must be at least 3 characters long".to_string());
+      errors.push(Self::SHORT_COMPANY_ERR.to_string());
     }
 
     if self.name.len() > 100 {
-      errors.push("Company Name must be at most 100 characters long".to_string());
+      errors.push(Self::LONG_COMPANY_ERR.to_string());
     }
 
-    let alphabetic_check = self.username.chars().all(|c| c.is_alphanumeric());
+    let alphabetic_check = self.username.chars().all(|c| c.is_ascii_alphanumeric());
     if !alphabetic_check {
-      errors.push("Username must be alphabetic".to_string());
+      errors.push(Self::USERNAME_NONALPHABETIC_ERR.to_string());
     }
 
     if self.password.len() < 12 {
-      errors.push("Password must be at least 12 characters long".to_string());
+      errors.push(Self::SHORT_PASSWORD_ERR.to_string());
     }
 
     // TODO Check if username is taken
@@ -90,52 +97,11 @@ mod test {
   use super::UserBody;
   use crate::routes::handle_requests;
   use crate::routes::test::build_test_request;
-  use crate::routes::users::login::LoginResponse;
-  use crate::routes::users::test::{before_user_test, INVALID_USER_BAD_PASSWORD, VALID_USER};
+  use crate::routes::users::test::{before_user_test};
 
-  #[tokio::test]
-  async fn valid_user_auth_flow() {
+  async fn assert_bad_registration(value: UserBody, contained_errors: Vec<String>) {
     before_user_test().await;
 
-    let value: UserBody = VALID_USER.clone();
-    let req = build_test_request(
-      Method::POST,
-      "/register",
-      serde_json::to_string(&value).unwrap().as_str(),
-      None,
-    );
-    let res = handle_requests(req).await.unwrap();
-    assert_eq!(
-      res.status(),
-      StatusCode::OK,
-      "Request failed: {}",
-      String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap()
-    );
-
-    let req = build_test_request(
-      Method::POST,
-      "/login",
-      serde_json::to_string(&value).unwrap().as_str(),
-      None,
-    );
-    let res = handle_requests(req).await.unwrap();
-    let status = res.status();
-    let body = String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap();
-    assert_eq!(status, StatusCode::OK, "Request failed: {}", body);
-
-    let response_obj: LoginResponse = serde_json::from_str(&body).unwrap();
-    let req = build_test_request(Method::GET, "/user", "", Some(response_obj.token));
-    let res = handle_requests(req).await.unwrap();
-    let status = res.status();
-    let body = String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap();
-    assert_eq!(status, StatusCode::OK, "Request failed: {}", body);
-  }
-
-  #[tokio::test]
-  async fn invalid_user_registration() {
-    before_user_test().await;
-
-    let value: UserBody = INVALID_USER_BAD_PASSWORD.clone();
     let req = build_test_request(
       Method::POST,
       "/register",
@@ -144,12 +110,96 @@ mod test {
     );
     let res = handle_requests(req).await.unwrap();
     let status = res.status();
-    let body = res.into_body();
+    let body = String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap();
     assert_eq!(
       status,
       StatusCode::BAD_REQUEST,
       "Test failed: {}",
-      String::from_utf8(hyper::body::to_bytes(body).await.unwrap().to_vec()).unwrap()
+      body
     );
+
+    contained_errors.iter().for_each(|err| {
+      assert!(body.contains(err), "Failed, error list did not contain \"{}\", only: {}", err, body);
+    });
+  }
+
+  #[tokio::test]
+  async fn invalid_user_bad_password() {
+    let value: UserBody = UserBody {
+      name: "Tester McTester".to_string(),
+      username: "tester".to_string(),
+      password: "testtest".to_string(),
+    };
+
+    assert_bad_registration(value, vec![UserBody::SHORT_PASSWORD_ERR.to_string()]).await;
+  }
+
+  #[tokio::test]
+  async fn invalid_user_short_username() {
+    let value: UserBody = UserBody {
+      name: "Tester McTester".to_string(),
+      username: "aa".to_string(),
+      password: "testtesttest".to_string(),
+    };
+
+    assert_bad_registration(value, vec![UserBody::SHORT_USERNAME_ERR.to_string()]).await;
+  }
+
+  #[tokio::test]
+  async fn invalid_user_long_username() {
+    let value: UserBody = UserBody {
+      name: "Tester McTester".to_string(),
+      username: String::from_utf8(vec![b'a'; 1000]).unwrap(),
+      password: "testtesttest".to_string(),
+    };
+
+    assert_bad_registration(value, vec![UserBody::LONG_USERNAME_ERR.to_string()]).await;
+  }
+
+  #[tokio::test]
+  async fn invalid_user_long_company() {
+    let value: UserBody = UserBody {
+      name: String::from_utf8(vec![b'a'; 1000]).unwrap(),
+      username: "testtest".to_string(),
+      password: "testtesttest".to_string(),
+    };
+
+    assert_bad_registration(value, vec![UserBody::LONG_COMPANY_ERR.to_string()]).await;
+  }
+
+  #[tokio::test]
+  async fn invalid_user_short_company() {
+    let value: UserBody = UserBody {
+      name: "a".to_string(),
+      username: "testtest".to_string(),
+      password: "testtesttest".to_string(),
+    };
+
+    assert_bad_registration(value, vec![UserBody::SHORT_COMPANY_ERR.to_string()]).await;
+  }
+
+  #[tokio::test]
+  async fn invalid_user_nonalphabetic_company() {
+    let value: UserBody = UserBody {
+      name: "Tester McTester".to_string(),
+      username: "$$$$".to_string(),
+      password: "testtesttest".to_string(),
+    };
+
+    assert_bad_registration(value, vec![UserBody::USERNAME_NONALPHABETIC_ERR.to_string()]).await;
+  }
+
+  #[tokio::test]
+  async fn invalid_registration_malformed() {
+    let req = build_test_request(
+      Method::POST,
+      "/register",
+      "Bad body",
+      None,
+    );
+    let res = handle_requests(req).await.unwrap();
+    let status = res.status();
+    let body = String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap();
+    assert_eq!(status, StatusCode::BAD_REQUEST, "Test failed: {}", body);
   }
 }

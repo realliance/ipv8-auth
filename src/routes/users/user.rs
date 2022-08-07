@@ -38,3 +38,19 @@ pub async fn get_user_by_token(req: Request<Body>) -> Result<Response<Body>, Inf
     Err(err) => Ok(err),
   }
 }
+
+#[cfg(test)]
+mod test {
+    use hyper::{Method, StatusCode};
+
+    use crate::routes::{handle_requests, test::build_test_request};
+
+  #[tokio::test]
+  async fn fake_auth_header() {
+    let req = build_test_request(Method::GET, "/user", "", Some("1234".to_string()));
+    let res = handle_requests(req).await.unwrap();
+    let status = res.status();
+    let body = String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap();
+    assert_eq!(status, StatusCode::UNAUTHORIZED, "Test failed: {}", body);
+  }
+}

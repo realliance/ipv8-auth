@@ -89,3 +89,11 @@ pub async fn post_instructions(req: Request<Body>) -> Result<Response<Body>, Inf
     Err(_) => respond!(StatusCode::INTERNAL_SERVER_ERROR, "An internal error occured"),
   }
 }
+
+#[cfg(test)]
+mod test {
+  #[tokio::test]
+  async fn can_solve() {
+    
+  }
+}
