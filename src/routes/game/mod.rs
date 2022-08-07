@@ -1,16 +1,16 @@
 use std::convert::Infallible;
 
-use hyper::{Request, Body, Response, Method, StatusCode};
+use futures::FutureExt;
+use hyper::{Body, Method, Request, Response, StatusCode};
 use rand::Rng;
 use serde::Serialize;
 
-use crate::{router::{Routable, RoutedFunction}, route_func, models::create_game_instruction, respond};
-
-use self::resp::{post_instructions, post_fizz, post_buzz};
-
-use super::{util::get_user_by_auth_header, DB};
-
-use futures::FutureExt;
+use self::resp::{post_buzz, post_fizz, post_instructions};
+use super::util::get_user_by_auth_header;
+use super::DB;
+use crate::models::create_game_instruction;
+use crate::router::{Routable, RoutedFunction};
+use crate::{respond, route_func};
 
 mod resp;
 
@@ -23,7 +23,7 @@ pub struct InstructionResponse {
 
 pub async fn post_next_instruction(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   let db = DB.lock().await;
-  
+
   let user = get_user_by_auth_header(&db, &req);
   if let Err(res) = user {
     return Ok(res);
@@ -42,20 +42,22 @@ pub async fn post_next_instruction(req: Request<Body>) -> Result<Response<Body>,
         return respond!(StatusCode::NO_CONTENT, "License Exam already passed!");
       }
 
-      Ok(Response::builder()
-      .status(StatusCode::OK)
-      .header("Content-Type", "application/json")
-      .body(
-        Body::from(
-          serde_json::to_string(&InstructionResponse {
-            token: game.token.to_string(),
-            id: game.instruction,
-            correct_in_a_row: user.license_game_stage,
-          })
+      Ok(
+        Response::builder()
+          .status(StatusCode::OK)
+          .header("Content-Type", "application/json")
+          .body(
+            Body::from(
+              serde_json::to_string(&InstructionResponse {
+                token: game.token.to_string(),
+                id: game.instruction,
+                correct_in_a_row: user.license_game_stage,
+              })
+              .unwrap(),
+            ),
+          )
           .unwrap(),
-        ),
       )
-      .unwrap())
     },
     Err(_) => respond!(StatusCode::INTERNAL_SERVER_ERROR, "Unknown error occured."),
   }

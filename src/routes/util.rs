@@ -1,11 +1,10 @@
-use diesel::{QueryDsl, RunQueryDsl, PgConnection};
-use hyper::{Request, Body, Response, StatusCode};
+use diesel::{PgConnection, QueryDsl, RunQueryDsl};
+use hyper::{Body, Request, Response, StatusCode};
 use tracing::warn;
 use uuid::Uuid;
-use crate::diesel::ExpressionMethods;
 
-use crate::models::{Session, update_session_last_used};
-use crate::models::User;
+use crate::diesel::ExpressionMethods;
+use crate::models::{update_session_last_used, Session, User};
 
 #[macro_export]
 macro_rules! respond {

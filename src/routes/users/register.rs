@@ -2,10 +2,9 @@ use std::convert::Infallible;
 
 use hyper::{Body, Request, Response, StatusCode};
 use serde::Deserialize;
-use tracing::error;
-
 #[cfg(test)]
 use serde::Serialize;
+use tracing::error;
 
 use crate::models::create_user;
 use crate::respond;
@@ -82,4 +81,75 @@ pub async fn register_user(req: Request<Body>) -> Result<Response<Body>, Infalli
   }
 
   respond!(StatusCode::OK, "")
+}
+
+#[cfg(test)]
+mod test {
+  use hyper::{Method, StatusCode};
+
+  use super::UserBody;
+  use crate::routes::handle_requests;
+  use crate::routes::test::build_test_request;
+  use crate::routes::users::login::LoginResponse;
+  use crate::routes::users::test::{before_user_test, INVALID_USER_BAD_PASSWORD, VALID_USER};
+
+  #[tokio::test]
+  async fn valid_user_auth_flow() {
+    before_user_test().await;
+
+    let value: UserBody = VALID_USER.clone();
+    let req = build_test_request(
+      Method::POST,
+      "/register",
+      serde_json::to_string(&value).unwrap().as_str(),
+      None,
+    );
+    let res = handle_requests(req).await.unwrap();
+    assert_eq!(
+      res.status(),
+      StatusCode::OK,
+      "Request failed: {}",
+      String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap()
+    );
+
+    let req = build_test_request(
+      Method::POST,
+      "/login",
+      serde_json::to_string(&value).unwrap().as_str(),
+      None,
+    );
+    let res = handle_requests(req).await.unwrap();
+    let status = res.status();
+    let body = String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap();
+    assert_eq!(status, StatusCode::OK, "Request failed: {}", body);
+
+    let response_obj: LoginResponse = serde_json::from_str(&body).unwrap();
+    let req = build_test_request(Method::GET, "/user", "", Some(response_obj.token));
+    let res = handle_requests(req).await.unwrap();
+    let status = res.status();
+    let body = String::from_utf8(hyper::body::to_bytes(res.into_body()).await.unwrap().to_vec()).unwrap();
+    assert_eq!(status, StatusCode::OK, "Request failed: {}", body);
+  }
+
+  #[tokio::test]
+  async fn invalid_user_registration() {
+    before_user_test().await;
+
+    let value: UserBody = INVALID_USER_BAD_PASSWORD.clone();
+    let req = build_test_request(
+      Method::POST,
+      "/register",
+      serde_json::to_string(&value).unwrap().as_str(),
+      None,
+    );
+    let res = handle_requests(req).await.unwrap();
+    let status = res.status();
+    let body = res.into_body();
+    assert_eq!(
+      status,
+      StatusCode::BAD_REQUEST,
+      "Test failed: {}",
+      String::from_utf8(hyper::body::to_bytes(body).await.unwrap().to_vec()).unwrap()
+    );
+  }
 }

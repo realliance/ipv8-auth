@@ -15,9 +15,9 @@ use crate::routes::users::UserRouter;
 use crate::util::get_db_url;
 
 pub mod game;
+pub mod health;
 pub mod users;
 pub mod util;
-pub mod health;
 
 lazy_static! {
   // This connection sometimes closes. Consider a pool method.
@@ -51,4 +51,33 @@ pub async fn handle_requests(req: Request<Body>) -> Result<Response<Body>, Infal
 
 async fn not_found_route(_: Request<Body>) -> Result<Response<Body>, Infallible> {
   respond!(StatusCode::NOT_FOUND, "Not found")
+}
+
+#[cfg(test)]
+mod test {
+  use hyper::Method;
+
+  use super::*;
+
+  pub fn build_test_request<'a>(
+    verb: Method,
+    path: &'a str,
+    body: &'a str,
+    auth_token: Option<String>,
+  ) -> Request<Body> {
+    Request::builder()
+      .method(verb)
+      .uri(path)
+      .header("Authorization", auth_token.unwrap_or_default())
+      .body(Body::from(body.to_string()))
+      .unwrap()
+  }
+
+  #[tokio::test]
+  async fn can_receive_404() {
+    let res = handle_requests(build_test_request(Method::GET, "/fakepath", "", None))
+      .await
+      .unwrap();
+    assert_eq!(res.status(), StatusCode::NOT_FOUND);
+  }
 }

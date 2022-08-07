@@ -67,10 +67,7 @@ impl Router {
     let span = span!(Level::TRACE, "request");
     let result = {
       let _guard = span.enter();
-      let func = self
-        .routes
-        .get(&route)
-        .unwrap_or(&self.not_found_route);
+      let func = self.routes.get(&route).unwrap_or(&self.not_found_route);
       func(req).await
     };
     let time_to_complete = start.elapsed();

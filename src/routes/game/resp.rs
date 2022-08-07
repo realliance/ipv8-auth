@@ -1,10 +1,13 @@
 use std::convert::Infallible;
 
-use hyper::{Request, Body, Response, StatusCode};
+use hyper::{Body, Request, Response, StatusCode};
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{models::{update_fizz, update_buzz, update_instructions}, respond, routes::{util::get_user_by_auth_header, DB}};
+use crate::models::{update_buzz, update_fizz, update_instructions};
+use crate::respond;
+use crate::routes::util::get_user_by_auth_header;
+use crate::routes::DB;
 
 #[derive(Deserialize)]
 struct TokenBody {
@@ -26,7 +29,7 @@ async fn read_body_for_token(req: Request<Body>) -> Result<Uuid, Result<Response
 
 pub async fn post_fizz(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   let db = DB.lock().await;
-  
+
   let user = get_user_by_auth_header(&db, &req);
   if let Err(res) = user {
     return Ok(res);
@@ -47,7 +50,7 @@ pub async fn post_fizz(req: Request<Body>) -> Result<Response<Body>, Infallible>
 
 pub async fn post_buzz(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   let db = DB.lock().await;
-  
+
   let user = get_user_by_auth_header(&db, &req);
   if let Err(res) = user {
     return Ok(res);
@@ -68,7 +71,7 @@ pub async fn post_buzz(req: Request<Body>) -> Result<Response<Body>, Infallible>
 
 pub async fn post_instructions(req: Request<Body>) -> Result<Response<Body>, Infallible> {
   let db = DB.lock().await;
-  
+
   let user = get_user_by_auth_header(&db, &req);
   if let Err(res) = user {
     return Ok(res);

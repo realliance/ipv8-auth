@@ -54,9 +54,9 @@ pub fn reset_license_game_stage(conn: &PgConnection, user: User) -> Result<User,
 
 pub fn update_game_stage(conn: &PgConnection, user: User, new_stage: i32) -> User {
   diesel::update(users::table.filter(users::id.eq(user.id)))
-  .set(users::license_game_stage.eq(new_stage))
-  .get_result(conn)
-  .unwrap()
+    .set(users::license_game_stage.eq(new_stage))
+    .get_result(conn)
+    .unwrap()
 }
 
 #[derive(Associations, Insertable, Queryable)]
@@ -92,9 +92,9 @@ impl Game {
     let should_contact_fizz = self.instruction % 3 == 0;
     let should_contact_buzz = self.instruction % 5 == 0;
     let should_contact_neither = !should_contact_fizz && !should_contact_buzz;
-    should_contact_fizz == self.contacted_fizz 
-    && should_contact_buzz == self.contacted_buzz
-    && should_contact_neither == self.contacted_instructions
+    should_contact_fizz == self.contacted_fizz
+      && should_contact_buzz == self.contacted_buzz
+      && should_contact_neither == self.contacted_instructions
   }
 }
 
@@ -105,7 +105,7 @@ pub fn create_game_instruction(conn: &PgConnection, uid: Uuid, inst: u16) -> Res
     instruction: inst as i32,
     contacted_fizz: false,
     contacted_buzz: false,
-    contacted_instructions: false
+    contacted_instructions: false,
   };
 
   debug!("Creating game instruction {:?}", game);
@@ -115,7 +115,6 @@ pub fn create_game_instruction(conn: &PgConnection, uid: Uuid, inst: u16) -> Res
     use crate::schema::users::dsl::*;
     let mut user: User = users.filter(id.eq(uid)).first(conn).unwrap();
     let mut instruction_was_complete: bool = false;
-
 
     // Check for previous instruction completed successfully
     let game: Result<Game, _> = games.filter(user_id.eq(uid)).first(conn);
@@ -142,7 +141,10 @@ pub fn create_game_instruction(conn: &PgConnection, uid: Uuid, inst: u16) -> Res
     user
   };
 
-  diesel::insert_into(games::table).values(&game).get_result(conn).map(|game: Game| (user, game))
+  diesel::insert_into(games::table)
+    .values(&game)
+    .get_result(conn)
+    .map(|game: Game| (user, game))
 }
 
 // Mutators for Game Instruction

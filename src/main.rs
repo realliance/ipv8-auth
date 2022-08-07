@@ -19,9 +19,6 @@ pub mod routes;
 pub mod schema;
 pub mod util;
 
-#[cfg(test)]
-mod tests;
-
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() {
   tracing_subscriber::fmt::init();
@@ -36,10 +33,8 @@ async fn main() {
   let svc = make_service_fn(|_conn| async { Ok::<_, Infallible>(service_fn(handle_requests)) });
   let server = Server::bind(&addr).serve(svc);
 
-  let graceful = server
-    .with_graceful_shutdown(async {
-      tokio::signal::ctrl_c().await.expect("Failed to install signal handler")
-    });
+  let graceful =
+    server.with_graceful_shutdown(async { tokio::signal::ctrl_c().await.expect("Failed to install signal handler") });
 
   info!("Listening on http://{}", addr);
   if let Err(e) = graceful.await {

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::util::{external_url};
+use crate::util::external_url;
 
 #[derive(Serialize, Deserialize)]
 pub struct GameStrings {
