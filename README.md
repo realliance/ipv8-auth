@@ -1,4 +1,6 @@
 # ipv8-auth
+[![Docker](https://github.com/realliance/ipv8-auth/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/realliance/ipv8-auth/actions/workflows/docker-publish.yml)
+[![codecov](https://codecov.io/gh/realliance/ipv8-auth/branch/main/graph/badge.svg?token=RMMYVWK1UO)](https://codecov.io/gh/realliance/ipv8-auth)
 
 ```
 # Bring up the dev db
