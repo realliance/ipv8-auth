@@ -102,6 +102,42 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4872d67bab6358e59559027aa3b9157c53d9358c51423c17554809a8858e0f8"
 
 [[package]]
+name = "capnp"
+version = "0.14.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82efa3b0ab5e7e32b786334b052560ec0094135f906975d7481651b9ecf31a6a"
+
+[[package]]
+name = "capnp-futures"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a15248c8facb189a3c5fee74fbf1ff3adc134261d27da663b89c7d19ebaf983"
+dependencies = [
+ "capnp",
+ "futures",
+]
+
+[[package]]
+name = "capnp-rpc"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c4f17f96f68f2c1168ed7105d9e5cb4a095a5bef3578aee0f9c0644b85ca95e"
+dependencies = [
+ "capnp",
+ "capnp-futures",
+ "futures",
+]
+
+[[package]]
+name = "capnpc"
+version = "0.14.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdc9f1dc84666d4ff007b1a16c8f97db80764a624625979be05d869bcff43aaa"
+dependencies = [
+ "capnp",
+]
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -432,12 +468,15 @@ version = "0.1.0"
 dependencies = [
  "argon2",
  "async-trait",
+ "capnp",
+ "capnp-rpc",
  "chrono",
  "diesel",
  "dotenv",
  "futures",
  "hashbrown",
  "hyper",
+ "ipv8-proto-rust",
  "lazy_static",
  "mockall",
  "rand",
@@ -445,10 +484,20 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "tokio-util",
  "toml",
  "tracing",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "ipv8-proto-rust"
+version = "0.1.0"
+source = "git+https://github.com/realliance/ipv8-proto.git?rev=137aa4dea8dd810714dc0e0095b4fd8d0d8e930e#137aa4dea8dd810714dc0e0095b4fd8d0d8e930e"
+dependencies = [
+ "capnp",
+ "capnpc",
 ]
 
 [[package]]
@@ -913,6 +962,7 @@ checksum = "cc463cd8deddc3770d20f9852143d50bf6094e640b485cb2e189a2099085ff45"
 dependencies = [
  "bytes",
  "futures-core",
+ "futures-io",
  "futures-sink",
  "pin-project-lite",
  "tokio",

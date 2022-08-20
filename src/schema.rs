@@ -30,4 +30,8 @@ table! {
 joinable!(games -> users (user_id));
 joinable!(sessions -> users (user_id));
 
-allow_tables_to_appear_in_same_query!(games, sessions, users,);
+allow_tables_to_appear_in_same_query!(
+    games,
+    sessions,
+    users,
+);
